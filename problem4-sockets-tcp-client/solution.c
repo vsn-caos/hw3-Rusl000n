@@ -28,6 +28,52 @@ int main(int argc, char *argv[]) {
     //       подключитесь через connect,
     //       реализуйте цикл чтения/отправки/приёма/вывода чисел.
     //       Порядок байт — Little Endian (на x86/x86_64 это нативный порядок).
+    struct in_addr ip_addr;
+    if (!inet_aton(argv[1], &ip_addr)) {
+        fprintf(stderr, "Invalid IP address\n");
+        return 1;
+    }
+    int port = atoi(argv[2]);
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
+        perror("socket");
+        return 1;
+    }
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr = ip_addr;
 
+    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        perror("connect");
+        close(sock);
+        return 1;
+    }
+
+    int32_t number;
+    while (scanf("%d", (int*)&number) == 1) {
+        int32_t le_number = htole32(number);
+        ssize_t sent = send(sock, &le_number, sizeof(le_number), 0);
+        if (sent != sizeof(le_number)) {
+            perror("send");
+            break;
+        }
+
+        int32_t response_le;
+        ssize_t received = recv(sock, &response_le, sizeof(response_le), MSG_WAITALL);
+        if (received == 0) {
+            break;
+        }
+        if (received != sizeof(response_le)) {
+            perror("recv");
+            break;
+        }
+        int32_t response = le32toh(response_le);
+        printf("%d\n", response);
+    }
+
+    close(sock);
+    return 0;
     return 0;
 }

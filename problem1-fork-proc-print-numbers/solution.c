@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>kkddkk
 #include <unistd.h>
 #include <sys/wait.h>
 
@@ -20,6 +20,30 @@ int main(int argc, char *argv[]) {
 
     // TODO: создайте цепочку из N процессов (каждый не более чем с одним потомком).
     //       Каждый процесс выводит одно число. Порядок вывода должен быть 1 2 3 ... N.
+    if (n <= 0) return 0;
 
+    int current = 1;
+    while (1) {
+        if (current == n) {
+            printf("%d\n", current);
+            fflush(stdout);
+            break;
+        }
+        printf("%d ", current);
+        fflush(stdout);
+
+        pid_t pid = fork();
+        if (pid < 0) {
+            perror("fork");
+            return 1;
+        }
+        if (pid == 0) {
+            current++;
+        } else {
+            int status;
+            waitpid(pid, &status, 0);
+            return 0;
+        }
+    }
     return 0;
 }
